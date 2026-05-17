@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { projects } from "@/db/schema";
-import { brandingSchema, parseBranding, type Branding } from "./types.js";
+import { brandingSchema, parseBranding, type Branding } from "./types";
 
 /** Read the branding column for a project slug. Returns null if absent. */
 export async function getBrandingBySlug(slug: string): Promise<Branding | null> {
