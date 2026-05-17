@@ -1,25 +1,41 @@
 import Link from "next/link";
-import { requireUser } from "@/auth/guards";
+import { requireUser, isAdmin } from "@/auth/guards";
 import { projectsForUser } from "@/db/queries";
 import { signOut } from "@/auth/config";
 
 export default async function HomePage() {
     const user = await requireUser();
-    const projects = await projectsForUser(user.id);
+    const [projects, admin] = await Promise.all([
+        projectsForUser(user.id),
+        isAdmin(user),
+    ]);
     return (
         <main className="max-w-2xl mx-auto py-12 px-4">
             <header className="flex items-center justify-between mb-8">
                 <h1 className="text-2xl font-semibold">Vos espaces</h1>
-                <form
-                    action={async () => {
-                        "use server";
-                        await signOut({ redirectTo: "/login" });
-                    }}
-                >
-                    <button type="submit" className="text-sm text-zinc-500 hover:text-zinc-900">
-                        Se déconnecter ({user.email})
-                    </button>
-                </form>
+                <div className="flex items-center gap-4">
+                    {admin && (
+                        <Link
+                            href="/admin"
+                            className="text-sm text-zinc-500 hover:text-zinc-900"
+                        >
+                            Administration
+                        </Link>
+                    )}
+                    <form
+                        action={async () => {
+                            "use server";
+                            await signOut({ redirectTo: "/login" });
+                        }}
+                    >
+                        <button
+                            type="submit"
+                            className="text-sm text-zinc-500 hover:text-zinc-900"
+                        >
+                            Se déconnecter ({user.email})
+                        </button>
+                    </form>
+                </div>
             </header>
             {projects.length === 0 ? (
                 <p className="text-zinc-500">

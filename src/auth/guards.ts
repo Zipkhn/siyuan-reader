@@ -32,7 +32,7 @@ export async function requireUser(): Promise<SessionUser> {
     return user;
 }
 
-export async function isAdmin(user: SessionUser): boolean | Promise<boolean> {
+export async function isAdmin(user: SessionUser): Promise<boolean> {
     return user.email.toLowerCase() === env.ADMIN_EMAIL.toLowerCase();
 }
 
