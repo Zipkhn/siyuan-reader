@@ -1,6 +1,6 @@
 import "server-only";
 import { and, eq, desc, sql } from "drizzle-orm";
-import { db, schema } from "./index";
+import { db, ensureFts, schema } from "./index";
 
 const { projects, documents, userProjects, users } = schema;
 
@@ -103,6 +103,7 @@ export async function searchDocumentsForUserInProject(
 ): Promise<SearchHit[]> {
     const ftsQuery = buildFtsQuery(rawQuery);
     if (!ftsQuery) return [];
+    await ensureFts();
     const rows = await db.all<{
         siyuan_id: string;
         slug: string;

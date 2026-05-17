@@ -1,29 +1,25 @@
 import "server-only";
 import { readdir } from "node:fs/promises";
-import { eq } from "drizzle-orm";
-import { db, sqlite } from "@/db";
+import { eq, sql } from "drizzle-orm";
+import { db, ensureFts } from "@/db";
 import { documents, projects } from "@/db/schema";
 import { readProjectIndex, readSnapshot } from "@/snapshots/fs";
 import { env } from "@/env";
 
-// Prepared FTS statements — compiled once.
-const ftsDelete = sqlite.prepare("DELETE FROM documents_fts WHERE document_id = ?");
-const ftsInsert = sqlite.prepare(
-    "INSERT INTO documents_fts (document_id, title, excerpt, search_text) VALUES (?, ?, ?, ?)",
-);
-
-function upsertFts(
+async function upsertFts(
     documentId: string,
     title: string,
     excerpt: string,
     searchText: string,
-): void {
-    ftsDelete.run(documentId);
-    ftsInsert.run(documentId, title, excerpt, searchText);
+): Promise<void> {
+    await db.run(sql`DELETE FROM documents_fts WHERE document_id = ${documentId}`);
+    await db.run(
+        sql`INSERT INTO documents_fts (document_id, title, excerpt, search_text) VALUES (${documentId}, ${title}, ${excerpt}, ${searchText})`,
+    );
 }
 
-function deleteFts(documentId: string): void {
-    ftsDelete.run(documentId);
+async function deleteFts(documentId: string): Promise<void> {
+    await db.run(sql`DELETE FROM documents_fts WHERE document_id = ${documentId}`);
 }
 
 export interface SyncResult {
@@ -46,6 +42,7 @@ export async function syncProject(projectSlug: string): Promise<SyncResult> {
     if (!project) {
         throw new Error(`Project not found: ${projectSlug}`);
     }
+    await ensureFts();
     const index = await readProjectIndex(projectSlug);
     if (!index) {
         // Project exists in DB but no snapshots yet: clear any stale rows.
@@ -54,7 +51,7 @@ export async function syncProject(projectSlug: string): Promise<SyncResult> {
             .from(documents)
             .where(eq(documents.projectId, project.id));
         for (const row of stale) {
-            deleteFts(row.id);
+            await deleteFts(row.id);
         }
         await db.delete(documents).where(eq(documents.projectId, project.id));
         return { project: projectSlug, inserted: 0, updated: 0, removed: 0, skipped: 0 };
@@ -103,7 +100,7 @@ export async function syncProject(projectSlug: string): Promise<SyncResult> {
                 })
                 .returning({ id: documents.id });
             const snap = await readSnapshot(projectSlug, entry.id);
-            upsertFts(inserted.id, entry.title, entry.excerpt ?? "", snap?.search_text ?? "");
+            await upsertFts(inserted.id, entry.title, entry.excerpt ?? "", snap?.search_text ?? "");
             result.inserted += 1;
         } else if (
             prev.slug !== entry.slug ||
@@ -123,20 +120,20 @@ export async function syncProject(projectSlug: string): Promise<SyncResult> {
                 })
                 .where(eq(documents.id, prev.id));
             const snap = await readSnapshot(projectSlug, entry.id);
-            upsertFts(prev.id, entry.title, entry.excerpt ?? "", snap?.search_text ?? "");
+            await upsertFts(prev.id, entry.title, entry.excerpt ?? "", snap?.search_text ?? "");
             result.updated += 1;
         } else {
             // Doc unchanged in metadata, but FTS index might be missing or stale
             // (e.g. brand new FTS bootstrap, or schema migration). Force re-index.
             const snap = await readSnapshot(projectSlug, entry.id);
-            upsertFts(prev.id, entry.title, entry.excerpt ?? "", snap?.search_text ?? "");
+            await upsertFts(prev.id, entry.title, entry.excerpt ?? "", snap?.search_text ?? "");
             result.skipped += 1;
         }
     }
 
     for (const row of existingRows) {
         if (!seen.has(row.siyuanId)) {
-            deleteFts(row.id);
+            await deleteFts(row.id);
             await db.delete(documents).where(eq(documents.id, row.id));
             result.removed += 1;
         }

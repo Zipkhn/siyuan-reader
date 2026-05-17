@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 const schema = z.object({
-    DATABASE_URL: z.string().min(1).default("./data/reader.db"),
+    // libSQL URL. Local file: "file:./data/reader.db". Remote Turso:
+    // "libsql://<db>-<org>.turso.io" (requires DATABASE_AUTH_TOKEN).
+    DATABASE_URL: z.string().min(1).default("file:./data/reader.db"),
+    // Auth token for remote Turso. Leave empty for local file mode.
+    DATABASE_AUTH_TOKEN: z.string().optional(),
     AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters (openssl rand -base64 32)"),
     AUTH_URL: z.string().url().optional(),
     AUTH_TRUST_HOST: z.string().optional(),
