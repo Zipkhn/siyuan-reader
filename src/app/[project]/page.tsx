@@ -6,6 +6,7 @@ import {
     findProjectBySlug,
     searchDocumentsForUserInProject,
 } from "@/db/queries";
+import { parseBranding } from "@/branding/types";
 
 interface DocItem {
     siyuanId: string;
@@ -48,16 +49,30 @@ export default async function ProjectPage({
         updatedAt: d.updatedAt,
     }));
 
+    const branding = project?.branding ? parseBranding(project.branding) : null;
+    const displayName = branding?.display_name ?? project?.name ?? projectSlug;
+    const logoSrc = branding?.logo_path ? `/branding/${project!.id}/logo` : null;
+
     return (
         <main className="max-w-3xl mx-auto py-12 px-4">
             <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-900">
                 ← Tous les espaces
             </Link>
-            <header className="mt-3 mb-6">
-                <h1 className="text-2xl font-semibold">{project?.name ?? projectSlug}</h1>
-                {project?.description && (
-                    <p className="text-zinc-500 mt-1">{project.description}</p>
+            <header className="mt-3 mb-6 flex items-center gap-4">
+                {logoSrc && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                        src={logoSrc}
+                        alt={`${displayName} logo`}
+                        className="h-12 w-12 rounded object-contain"
+                    />
                 )}
+                <div>
+                    <h1 className="text-2xl font-semibold">{displayName}</h1>
+                    {project?.description && (
+                        <p className="text-zinc-500 mt-1">{project.description}</p>
+                    )}
+                </div>
             </header>
 
             <form method="GET" className="mb-6 flex items-center gap-2">
@@ -66,11 +81,11 @@ export default async function ProjectPage({
                     name="q"
                     defaultValue={trimmedQuery}
                     placeholder="Rechercher dans les documents…"
-                    className="block w-full rounded border border-zinc-300 px-3 py-2 focus:border-zinc-900 focus:outline-none"
+                    className="block w-full rounded border border-zinc-300 px-3 py-2 focus:outline-none focus:border-[var(--brand-primary)]"
                 />
                 <button
                     type="submit"
-                    className="rounded bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-700"
+                    className="rounded px-4 py-2 text-sm text-white bg-[var(--brand-primary)] hover:bg-[var(--brand-accent)]"
                 >
                     Chercher
                 </button>

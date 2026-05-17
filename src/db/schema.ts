@@ -63,6 +63,10 @@ export const projects = sqliteTable("projects", {
     slug: text("slug").notNull().unique(),
     name: text("name").notNull(),
     description: text("description"),
+    // Per-project branding (logo + 4 color tokens + optional display name).
+    // NULL or any missing field falls back to the default UI. See
+    // src/branding/types.ts for the parsed shape and validation rules.
+    branding: text("branding"),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
         .$defaultFn(() => new Date())
         .notNull(),

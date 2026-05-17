@@ -4,12 +4,16 @@ import { getUser, isAdmin } from "@/auth/guards";
 import { db } from "@/db";
 import { documents, projects, userProjects, users } from "@/db/schema";
 import { count, eq } from "drizzle-orm";
+import { parseBranding, type Branding } from "@/branding/types";
 import {
+    clearBrandingAction,
     createProjectAction,
     deleteProjectAction,
     inviteUserAction,
     revokeAccessAction,
+    setBrandingAction,
     syncAction,
+    uploadLogoAction,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +25,7 @@ interface ProjectRow {
     description: string | null;
     docCount: number;
     members: { userId: string; email: string }[];
+    branding: Branding | null;
 }
 
 async function loadAdminData(): Promise<ProjectRow[]> {
@@ -55,6 +60,7 @@ async function loadAdminData(): Promise<ProjectRow[]> {
         description: p.description,
         docCount: countByProject.get(p.id) ?? 0,
         members: membersByProject.get(p.id) ?? [],
+        branding: parseBranding(p.branding),
     }));
 }
 
@@ -159,7 +165,109 @@ export default async function AdminPage({
                                             </ul>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-3 pt-2">
+                                    <div>
+                                        <p className="text-xs uppercase tracking-wide text-zinc-400 mb-2 pt-2 border-t border-zinc-100">
+                                            Branding
+                                        </p>
+                                        <form action={setBrandingAction} className="space-y-2">
+                                            <input type="hidden" name="projectId" value={p.id} />
+                                            <label className="block">
+                                                <span className="text-xs text-zinc-500">
+                                                    Nom affiché (optionnel, override de "{p.name}")
+                                                </span>
+                                                <input
+                                                    type="text"
+                                                    name="display_name"
+                                                    defaultValue={p.branding?.display_name ?? ""}
+                                                    maxLength={80}
+                                                    placeholder={p.name}
+                                                    className="mt-1 block w-full rounded border border-zinc-300 px-3 py-1.5 text-sm"
+                                                />
+                                            </label>
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                                {(
+                                                    [
+                                                        ["primary", "Primary"],
+                                                        ["accent", "Accent"],
+                                                        ["bg", "Fond"],
+                                                        ["text", "Texte"],
+                                                    ] as const
+                                                ).map(([key, label]) => (
+                                                    <label key={key} className="block">
+                                                        <span className="text-xs text-zinc-500">
+                                                            {label}
+                                                        </span>
+                                                        <input
+                                                            type="text"
+                                                            name={key}
+                                                            defaultValue={
+                                                                p.branding?.[key] ?? ""
+                                                            }
+                                                            placeholder="#RRGGBB ou vide"
+                                                            pattern="(#[0-9a-fA-F]{6})?"
+                                                            className="mt-1 block w-full rounded border border-zinc-300 px-2 py-1 font-mono text-xs"
+                                                        />
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                className="text-xs rounded border border-zinc-300 px-3 py-1.5 hover:bg-zinc-50"
+                                            >
+                                                Enregistrer les couleurs
+                                            </button>
+                                        </form>
+
+                                        <form
+                                            action={uploadLogoAction}
+                                            encType="multipart/form-data"
+                                            className="mt-3 flex items-center gap-2"
+                                        >
+                                            <input type="hidden" name="projectId" value={p.id} />
+                                            <input
+                                                type="file"
+                                                name="logo"
+                                                accept="image/png,image/svg+xml,image/webp"
+                                                required
+                                                className="text-xs"
+                                            />
+                                            <button
+                                                type="submit"
+                                                className="text-xs rounded border border-zinc-300 px-3 py-1.5 hover:bg-zinc-50"
+                                            >
+                                                Uploader logo
+                                            </button>
+                                            {p.branding?.logo_path && (
+                                                /* eslint-disable-next-line @next/next/no-img-element */
+                                                <img
+                                                    src={`/branding/${p.id}/logo`}
+                                                    alt="logo actuel"
+                                                    className="h-8 w-8 object-contain rounded"
+                                                />
+                                            )}
+                                        </form>
+
+                                        {p.branding && (
+                                            <form
+                                                action={clearBrandingAction}
+                                                className="mt-2 inline-block"
+                                            >
+                                                <input
+                                                    type="hidden"
+                                                    name="projectId"
+                                                    value={p.id}
+                                                />
+                                                <button
+                                                    type="submit"
+                                                    className="text-xs text-red-600 hover:underline"
+                                                >
+                                                    réinitialiser le branding au défaut
+                                                </button>
+                                            </form>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center gap-3 pt-2 border-t border-zinc-100">
                                         <form action={syncAction}>
                                             <input
                                                 type="hidden"
