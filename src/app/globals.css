@@ -23,3 +23,49 @@
 .doc-html table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9em; }
 .doc-html th, .doc-html td { border: 1px solid #e4e4e7; padding: 0.5rem 0.75rem; text-align: left; }
 .doc-html th { background: #f4f4f5; font-weight: 600; }
+
+/* --- Siyuan block markup ---
+   Siyuan renders blocks as <div data-type="Node..."> instead of semantic
+   HTML (no real <h1>, <pre>, etc). We style those data-type attrs directly
+   so existing snapshots render properly without re-extraction. */
+.doc-html [data-type="NodeHeading"]                    { font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; line-height: 1.3; }
+.doc-html [data-type="NodeHeading"][data-subtype="h1"] { font-size: 1.875rem; }
+.doc-html [data-type="NodeHeading"][data-subtype="h2"] { font-size: 1.5rem; }
+.doc-html [data-type="NodeHeading"][data-subtype="h3"] { font-size: 1.25rem; }
+.doc-html [data-type="NodeHeading"][data-subtype="h4"],
+.doc-html [data-type="NodeHeading"][data-subtype="h5"],
+.doc-html [data-type="NodeHeading"][data-subtype="h6"] { font-size: 1rem; font-weight: 600; margin-top: 1rem; }
+
+.doc-html [data-type="NodeParagraph"]    { margin: 0.75rem 0; }
+.doc-html [data-type="NodeList"]         { padding-left: 1.5rem; margin: 0.5rem 0; }
+.doc-html [data-type="NodeList"][data-subtype="u"] { list-style: disc; }
+.doc-html [data-type="NodeList"][data-subtype="o"] { list-style: decimal; }
+.doc-html [data-type="NodeListItem"]     { display: list-item; margin: 0.25rem 0; }
+.doc-html [data-type="NodeBlockquote"]   { border-left: 3px solid #d4d4d8; padding-left: 1rem; color: #52525b; margin: 1rem 0; }
+.doc-html [data-type="NodeThematicBreak"] { border-top: 1px solid #e4e4e7; margin: 2rem 0; height: 0; }
+
+.doc-html [data-type="NodeCodeBlock"] {
+    background: #18181b; color: #fafafa;
+    padding: 1rem; border-radius: 6px;
+    overflow-x: auto; margin: 1rem 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.875rem; line-height: 1.5;
+    white-space: pre;
+}
+/* Hide the editor's copy/menu toolbar that ships inside the snapshot. */
+.doc-html [data-type="NodeCodeBlock"] .protyle-action { display: none; }
+/* The .hljs wrapper from Siyuan has an empty header div + the real code. */
+.doc-html [data-type="NodeCodeBlock"] .hljs > div:first-child:empty { display: none; }
+
+.doc-html [data-type="NodeMathBlock"] pre.math-block {
+    background: #f4f4f5; padding: 1rem; border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    overflow-x: auto; margin: 1rem 0;
+}
+
+.doc-html [data-type="NodeImage"] img { max-width: 100%; height: auto; border-radius: 6px; margin: 1rem 0; }
+
+.doc-html [data-type="NodeAttributeView"] table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+
+.doc-html [data-type="NodeSuperBlock"][data-sb-layout="row"] { display: flex; gap: 1rem; flex-direction: row; margin: 1rem 0; }
+.doc-html [data-type="NodeSuperBlock"][data-sb-layout="col"] { display: flex; gap: 1rem; flex-direction: column; margin: 1rem 0; }
