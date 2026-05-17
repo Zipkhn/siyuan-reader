@@ -13,11 +13,11 @@ const schema = z.object({
 
 const parsed = schema.safeParse(process.env);
 if (!parsed.success) {
-    console.error("Invalid environment variables:");
-    for (const issue of parsed.error.issues) {
-        console.error(`  ${issue.path.join(".")}: ${issue.message}`);
-    }
-    throw new Error("Environment validation failed");
+    const issues = parsed.error.issues
+        .map((issue) => `  - ${issue.path.join(".")}: ${issue.message}`)
+        .join("\n");
+    console.error(`Invalid environment variables:\n${issues}`);
+    throw new Error(`Environment validation failed:\n${issues}`);
 }
 
 export const env = parsed.data;
