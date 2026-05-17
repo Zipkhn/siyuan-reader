@@ -111,11 +111,11 @@ export async function syncAction(formData: FormData): Promise<void> {
     try {
         if (parsed.data.projectSlug) {
             const result = await syncProject(parsed.data.projectSlug);
-            message = `Sync ${result.project} — inséré:${result.inserted} mis à jour:${result.updated} supprimé:${result.removed} inchangé:${result.skipped}`;
+            message = `Sync ${result.project} — inséré:${result.inserted} mis à jour:${result.updated} supprimé:${result.removed} ré-indexé:${result.skipped}`;
         } else {
             const out = await syncAllProjects();
             const summary = out.results
-                .map((r) => `${r.project}(+${r.inserted}/~${r.updated}/-${r.removed})`)
+                .map((r) => `${r.project}(+${r.inserted}/~${r.updated}/-${r.removed}/idx${r.skipped})`)
                 .join(" ");
             const orphans = out.fsOnlyProjects.length
                 ? ` | snapshots sans projet DB : ${out.fsOnlyProjects.join(", ")}`
