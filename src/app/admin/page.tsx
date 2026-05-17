@@ -12,7 +12,6 @@ import {
     inviteUserAction,
     revokeAccessAction,
     setBrandingAction,
-    syncAction,
     uploadLogoAction,
 } from "./actions";
 
@@ -268,19 +267,6 @@ export default async function AdminPage({
                                     </div>
 
                                     <div className="flex items-center gap-3 pt-2 border-t border-zinc-100">
-                                        <form action={syncAction}>
-                                            <input
-                                                type="hidden"
-                                                name="projectSlug"
-                                                value={p.slug}
-                                            />
-                                            <button
-                                                type="submit"
-                                                className="text-xs rounded border border-zinc-300 px-3 py-1.5 hover:bg-zinc-50"
-                                            >
-                                                Synchroniser
-                                            </button>
-                                        </form>
                                         <form action={deleteProjectAction}>
                                             <input type="hidden" name="slug" value={p.slug} />
                                             <button
@@ -397,24 +383,6 @@ export default async function AdminPage({
                 </form>
             </section>
 
-            <section>
-                <h2 className="text-lg font-semibold mb-3">Synchronisation globale</h2>
-                <form
-                    action={syncAction}
-                    className="rounded border border-zinc-200 bg-white p-4 flex items-center justify-between"
-                >
-                    <p className="text-sm text-zinc-600">
-                        Scanne <code>SNAPSHOTS_DIR</code> et met à jour la table <code>documents</code>{" "}
-                        pour tous les projets connus.
-                    </p>
-                    <button
-                        type="submit"
-                        className="rounded border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-50"
-                    >
-                        Synchroniser tous les projets
-                    </button>
-                </form>
-            </section>
         </main>
     );
 }

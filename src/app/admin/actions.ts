@@ -7,7 +7,6 @@ import { requireAdmin } from "@/auth/guards";
 import { db } from "@/db";
 import { projects, userProjects, users } from "@/db/schema";
 import { findProjectBySlug, findUserByEmail } from "@/db/queries";
-import { syncAllProjects, syncProject } from "@/admin/sync";
 import {
     clearBrandingById,
     patchBrandingById,
@@ -31,10 +30,6 @@ const projectSchema = z.object({
 const inviteSchema = z.object({
     email: z.string().email(),
     projectSlug: z.string().regex(slugRe),
-});
-
-const syncSchema = z.object({
-    projectSlug: z.string().regex(slugRe).or(z.literal("")).optional(),
 });
 
 function back(message: string, error = false): never {
@@ -209,35 +204,3 @@ export async function clearBrandingAction(formData: FormData): Promise<void> {
     back("Branding réinitialisé au défaut.");
 }
 
-export async function syncAction(formData: FormData): Promise<void> {
-    await requireAdmin();
-    const parsed = syncSchema.safeParse({ projectSlug: formData.get("projectSlug") || undefined });
-    if (!parsed.success) {
-        back("paramètres invalides", true);
-    }
-    // Compute the message INSIDE try/catch, redirect OUTSIDE — redirect()
-    // throws a NEXT_REDIRECT signal that must propagate to Next.js, not be
-    // swallowed by our catch.
-    let message: string;
-    let isError = false;
-    try {
-        if (parsed.data.projectSlug) {
-            const result = await syncProject(parsed.data.projectSlug);
-            message = `Sync ${result.project} — inséré:${result.inserted} mis à jour:${result.updated} supprimé:${result.removed} ré-indexé:${result.skipped}`;
-        } else {
-            const out = await syncAllProjects();
-            const summary = out.results
-                .map((r) => `${r.project}(+${r.inserted}/~${r.updated}/-${r.removed}/idx${r.skipped})`)
-                .join(" ");
-            const orphans = out.fsOnlyProjects.length
-                ? ` | snapshots sans projet DB : ${out.fsOnlyProjects.join(", ")}`
-                : "";
-            message = `Sync global — ${summary || "(rien)"}${orphans}`;
-        }
-    } catch (e) {
-        message = e instanceof Error ? e.message : "sync failed";
-        isError = true;
-    }
-    revalidatePath("/admin");
-    back(message, isError);
-}

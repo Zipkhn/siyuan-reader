@@ -11,7 +11,9 @@ const schema = z.object({
     AUTH_TRUST_HOST: z.string().optional(),
     RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
     AUTH_EMAIL_FROM: z.string().email("AUTH_EMAIL_FROM must be a valid email"),
-    SNAPSHOTS_DIR: z.string().min(1).default("/data/snapshots"),
+    // Shared secret with the extractor for /api/ingest/* (Bearer token).
+    // Generate with: openssl rand -base64 32.
+    INGEST_SECRET: z.string().min(32, "INGEST_SECRET must be at least 32 characters"),
     ADMIN_EMAIL: z.string().email("ADMIN_EMAIL must be a valid email"),
 });
 

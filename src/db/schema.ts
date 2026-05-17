@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, primaryKey, unique } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, blob, primaryKey, unique } from "drizzle-orm/sqlite-core";
 
 // --- Auth.js tables (managed by @auth/drizzle-adapter) ---
 
@@ -88,7 +88,9 @@ export const documents = sqliteTable(
         slug: text("slug").notNull(),
         title: text("title").notNull(),
         excerpt: text("excerpt"),
-        snapshotPath: text("snapshot_path").notNull(),
+        contentHash: text("content_hash").notNull(),
+        snapshotJson: text("snapshot_json").notNull(),
+        html: text("html"),
         version: integer("version").notNull(),
         publishedAt: integer("published_at", { mode: "timestamp_ms" }).notNull(),
         updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
@@ -96,6 +98,28 @@ export const documents = sqliteTable(
     (t) => ({
         uniqProjectSiyuan: unique().on(t.projectId, t.siyuanId),
         uniqProjectSlug: unique().on(t.projectId, t.slug),
+    }),
+);
+
+export const assets = sqliteTable(
+    "assets",
+    {
+        id: text("id")
+            .primaryKey()
+            .$defaultFn(() => crypto.randomUUID()),
+        projectId: text("project_id")
+            .notNull()
+            .references(() => projects.id, { onDelete: "cascade" }),
+        sha256: text("sha256").notNull(),
+        mime: text("mime").notNull(),
+        sizeBytes: integer("size_bytes").notNull(),
+        bytes: blob("bytes", { mode: "buffer" }).notNull(),
+        createdAt: integer("created_at", { mode: "timestamp_ms" })
+            .$defaultFn(() => new Date())
+            .notNull(),
+    },
+    (t) => ({
+        uniqProjectSha: unique().on(t.projectId, t.sha256),
     }),
 );
 

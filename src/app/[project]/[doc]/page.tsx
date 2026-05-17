@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requireUser } from "@/auth/guards";
 import { documentForUser } from "@/db/queries";
-import { readSnapshotHtml } from "@/snapshots/fs";
 
 export default async function DocPage({
     params,
@@ -13,7 +12,7 @@ export default async function DocPage({
     const user = await requireUser();
     const row = await documentForUser(user.id, projectSlug, docSlug);
     if (!row) notFound();
-    const html = await readSnapshotHtml(projectSlug, row.doc.siyuanId);
+    const html = row.doc.html;
     if (html === null) notFound();
     return (
         <main className="max-w-3xl mx-auto py-12 px-4">
