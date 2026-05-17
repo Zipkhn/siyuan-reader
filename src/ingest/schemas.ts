@@ -66,6 +66,10 @@ export const IngestDocPayload = z
         outbound_refs: z.array(OutboundRef),
         search_text: z.string(),
         html: z.string().nullable(),
+        // Optional V1.x extension: the name of the Siyuan notebook this doc
+        // belongs to. Used by the reader UI to group docs by notebook.
+        // Older extractor payloads omit it; reader falls back to ungrouped.
+        notebook_name: z.string().optional(),
     })
     .strict();
 export type IngestDocPayload = z.infer<typeof IngestDocPayload>;

@@ -88,6 +88,7 @@ export const documents = sqliteTable(
         slug: text("slug").notNull(),
         title: text("title").notNull(),
         excerpt: text("excerpt"),
+        notebookName: text("notebook_name"),
         contentHash: text("content_hash").notNull(),
         snapshotJson: text("snapshot_json").notNull(),
         html: text("html"),

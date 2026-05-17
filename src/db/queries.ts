@@ -44,6 +44,7 @@ export async function documentsForUserInProject(userId: string, projectSlug: str
             slug: documents.slug,
             title: documents.title,
             excerpt: documents.excerpt,
+            notebookName: documents.notebookName,
             publishedAt: documents.publishedAt,
             updatedAt: documents.updatedAt,
         })

@@ -13,8 +13,29 @@ interface DocItem {
     slug: string;
     title: string;
     excerpt: string | null;
+    notebookName: string | null;
     publishedAt: Date;
     updatedAt: Date;
+}
+
+const UNGROUPED_LABEL = "Sans notebook";
+
+function groupByNotebook(items: DocItem[]): { name: string; docs: DocItem[] }[] {
+    const groups = new Map<string, DocItem[]>();
+    for (const item of items) {
+        const key = item.notebookName ?? UNGROUPED_LABEL;
+        const arr = groups.get(key);
+        if (arr) arr.push(item);
+        else groups.set(key, [item]);
+    }
+    // Sort: real notebooks first (alphabetic), ungrouped bucket last.
+    return [...groups.entries()]
+        .sort(([a], [b]) => {
+            if (a === UNGROUPED_LABEL) return 1;
+            if (b === UNGROUPED_LABEL) return -1;
+            return a.localeCompare(b, "fr");
+        })
+        .map(([name, docs]) => ({ name, docs }));
 }
 
 export default async function ProjectPage({
@@ -45,6 +66,9 @@ export default async function ProjectPage({
         slug: d.slug,
         title: d.title,
         excerpt: d.excerpt,
+        // Search results don't include notebookName (FTS5 query doesn't select
+        // it). That's fine: search results render flat (no grouping).
+        notebookName: "notebookName" in d ? (d.notebookName as string | null) : null,
         publishedAt: d.publishedAt,
         updatedAt: d.updatedAt,
     }));
@@ -109,7 +133,7 @@ export default async function ProjectPage({
 
             {items.length === 0 && !isSearching ? (
                 <p className="text-zinc-500">Aucun document publié pour le moment.</p>
-            ) : (
+            ) : isSearching ? (
                 <ul className="space-y-2">
                     {items.map((d) => (
                         <li key={d.siyuanId}>
@@ -130,6 +154,36 @@ export default async function ProjectPage({
                         </li>
                     ))}
                 </ul>
+            ) : (
+                <div className="space-y-6">
+                    {groupByNotebook(items).map((group) => (
+                        <section key={group.name}>
+                            <h2 className="mb-2 text-sm font-medium text-zinc-500 uppercase tracking-wide">
+                                📁 {group.name}
+                            </h2>
+                            <ul className="space-y-2">
+                                {group.docs.map((d) => (
+                                    <li key={d.siyuanId}>
+                                        <Link
+                                            href={`/${projectSlug}/${d.slug}`}
+                                            className="block rounded border border-zinc-200 bg-white px-4 py-3 hover:border-zinc-400"
+                                        >
+                                            <span className="block font-medium">{d.title}</span>
+                                            {d.excerpt && (
+                                                <p className="text-sm text-zinc-500 mt-1 line-clamp-2">
+                                                    {d.excerpt}
+                                                </p>
+                                            )}
+                                            <p className="text-xs text-zinc-400 mt-2">
+                                                Mis à jour le {new Date(d.updatedAt).toLocaleDateString("fr-FR")}
+                                            </p>
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </section>
+                    ))}
+                </div>
             )}
         </main>
     );

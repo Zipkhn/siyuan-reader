@@ -94,6 +94,7 @@ export async function POST(req: NextRequest) {
     const publishedAt = new Date(payload.doc.published_at);
     const updatedAt = new Date(payload.doc.updated_at);
 
+    const notebookName = payload.notebook_name ?? null;
     let docRowId: string;
     if (existing) {
         await db
@@ -102,6 +103,7 @@ export async function POST(req: NextRequest) {
                 slug: payload.doc.slug,
                 title: payload.doc.title,
                 excerpt: payload.doc.excerpt,
+                notebookName,
                 contentHash: payload.content_hash,
                 snapshotJson,
                 html: payload.html,
@@ -120,6 +122,7 @@ export async function POST(req: NextRequest) {
                 slug: payload.doc.slug,
                 title: payload.doc.title,
                 excerpt: payload.doc.excerpt,
+                notebookName,
                 contentHash: payload.content_hash,
                 snapshotJson,
                 html: payload.html,
