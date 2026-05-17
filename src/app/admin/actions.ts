@@ -103,25 +103,29 @@ export async function syncAction(formData: FormData): Promise<void> {
     if (!parsed.success) {
         back("paramètres invalides", true);
     }
+    // Compute the message INSIDE try/catch, redirect OUTSIDE — redirect()
+    // throws a NEXT_REDIRECT signal that must propagate to Next.js, not be
+    // swallowed by our catch.
+    let message: string;
+    let isError = false;
     try {
         if (parsed.data.projectSlug) {
             const result = await syncProject(parsed.data.projectSlug);
-            revalidatePath("/admin");
-            back(
-                `Sync ${result.project} — inséré:${result.inserted} mis à jour:${result.updated} supprimé:${result.removed} inchangé:${result.skipped}`,
-            );
+            message = `Sync ${result.project} — inséré:${result.inserted} mis à jour:${result.updated} supprimé:${result.removed} inchangé:${result.skipped}`;
         } else {
             const out = await syncAllProjects();
-            revalidatePath("/admin");
             const summary = out.results
                 .map((r) => `${r.project}(+${r.inserted}/~${r.updated}/-${r.removed})`)
                 .join(" ");
             const orphans = out.fsOnlyProjects.length
                 ? ` | snapshots sans projet DB : ${out.fsOnlyProjects.join(", ")}`
                 : "";
-            back(`Sync global — ${summary || "(rien)"}${orphans}`);
+            message = `Sync global — ${summary || "(rien)"}${orphans}`;
         }
     } catch (e) {
-        back(e instanceof Error ? e.message : "sync failed", true);
+        message = e instanceof Error ? e.message : "sync failed";
+        isError = true;
     }
+    revalidatePath("/admin");
+    back(message, isError);
 }
