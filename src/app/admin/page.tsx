@@ -376,9 +376,10 @@ export default async function AdminPage({
                         Inviter
                     </button>
                     <p className="text-xs text-zinc-500">
-                        L'utilisateur ne reçoit pas d'email d'invitation directement. Il doit aller sur{" "}
-                        <code>/login</code>, saisir son email, et recevra un magic-link s'il a été
-                        invité ici au préalable.
+                        L'utilisateur reçoit un email d'invitation avec le lien <code>/login</code>.
+                        Sur cette page, il saisit son email et obtient un magic-link.
+                        Si l'envoi d'email échoue (Resend mal configuré, etc.), l'ACL reste posée
+                        — l'utilisateur peut accéder à <code>/login</code> directement.
                     </p>
                 </form>
             </section>

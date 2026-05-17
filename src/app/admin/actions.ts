@@ -1,7 +1,9 @@
 "use server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
+import { Resend } from "resend";
 import { z } from "zod";
 import { requireAdmin } from "@/auth/guards";
 import { db } from "@/db";
@@ -18,6 +20,7 @@ import {
     MAX_LOGO_BYTES,
     writeProjectLogo,
 } from "@/branding/storage";
+import { env } from "@/env";
 
 const slugRe = /^[a-z0-9-]+$/;
 
@@ -87,8 +90,36 @@ export async function inviteUserAction(formData: FormData): Promise<void> {
         .insert(userProjects)
         .values({ userId: user.id, projectId: project!.id, grantedBy: admin.id })
         .onConflictDoNothing();
+
+    // Best-effort invite email. ACL is already in place even if this fails,
+    // so the admin sees a clear message and can still tell the user manually.
+    let emailNote = "email envoyé";
+    try {
+        const h = await headers();
+        const host = h.get("host");
+        const proto = h.get("x-forwarded-proto") ?? "https";
+        const loginUrl = `${proto}://${host}/login`;
+        const resend = new Resend(env.RESEND_API_KEY);
+        await resend.emails.send({
+            from: env.AUTH_EMAIL_FROM,
+            to: parsed.data.email,
+            subject: `Invitation à consulter "${project!.name}"`,
+            text: `Bonjour,
+
+Vous avez été invité à consulter « ${project!.name} ».
+
+Pour vous connecter, rendez-vous sur ${loginUrl} et saisissez cette adresse email. Vous recevrez un lien de connexion à usage unique.
+
+Si vous n'attendiez pas cette invitation, ignorez ce message.
+`,
+        });
+    } catch (e) {
+        console.error("[invite] failed to send invite email", e);
+        emailNote = "email NON envoyé (voir logs)";
+    }
+
     revalidatePath("/admin");
-    back(`${parsed.data.email} invité sur "${parsed.data.projectSlug}".`);
+    back(`${parsed.data.email} invité sur "${parsed.data.projectSlug}" (${emailNote}).`);
 }
 
 export async function revokeAccessAction(formData: FormData): Promise<void> {
